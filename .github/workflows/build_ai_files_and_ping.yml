@@ -1,0 +1,43 @@
+name: Build AI files and ping sitemap
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'data/client-data.csv' ]
+  schedule:
+    # Runs once per week at 03:00 UTC on Sunday (0 * * * 0)
+    - cron: '0 3 * * 0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate files and sitemap
+        run: |
+          # Run the Python generator. Adjust the path if needed.
+          python ai-generators/generate_files_updated.py
+
+      - name: Commit changes
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'actions@github.com'
+          git add .
+          git commit -m "Update generated AI files" || echo "No changes"
+          git push
+
+      - name: Ping search engines
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Replace <your-domain> with the domain where your sitemap is hosted
+          curl "http://www.google.com/ping?sitemap=https://<your-domain>/ai-sitemap.xml"
+          curl "https://www.bing.com/ping?sitemap=https://<your-domain>/ai-sitemap.xml"

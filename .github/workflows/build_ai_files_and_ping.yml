@@ -1,11 +1,9 @@
 name: Build AI files and ping sitemap
-
 on:
   push:
     branches: [ main ]
-    paths: [ 'data/client-data.xlsx' ]
+    paths: [ 'templates/client-data.xlsx' ]
   schedule:
-    # Runs once per week at 03:00 UTC on Sunday (0 * * * 0)
     - cron: '0 3 * * 0'
 
 jobs:
@@ -13,12 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      with:
-  token: ${{ secrets.GH_TOKEN }}
-
+        with:
+          token: ${{ secrets.GH_TOKEN }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-### ... rest of the file
+      - name: Install dependencies
+        run: |
+          pip install pandas openpyxl requests
+      - name: Generate AI files
+        run: |
+          python ai-generators/generate_files_updated.py
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git commit -m "Auto-generated AI files" || exit 0
+          git push

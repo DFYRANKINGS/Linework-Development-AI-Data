@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 # ========= CONFIG =========
 DATA_FILE = "templates/client-data.xlsx"
 OUTPUT_DIR = "schema-files"
-SITE_BASE = "https://yourdomain.com"  # <-- CHANGE THIS to your live domain
+SITE_BASE = "https://lineworkdevelopment.com"  # <-- CHANGE THIS to your live domain
 SITEMAP_FILE = "ai-sitemap.xml"
 # ==========================
 

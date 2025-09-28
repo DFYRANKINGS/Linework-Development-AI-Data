@@ -22,8 +22,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pandas openpyxl requests
-
+          pip install pandas openpyxl requests pyyaml
+ 
       - name: Generate AI files
         run: |
           python ai-generators/generate_files_updated.py

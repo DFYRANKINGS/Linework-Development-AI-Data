@@ -1,5 +1,5 @@
 name: Build AI Files and Ping
-on:
+"on":
   push:
     paths:
       - 'templates/client-data.xlsx'

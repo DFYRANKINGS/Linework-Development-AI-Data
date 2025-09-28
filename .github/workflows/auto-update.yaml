@@ -1,17 +1,16 @@
 name: Auto-Update Client Data
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: '0 8 * * 1'  # Weekly (Mondays 8AM)
+    - cron: '0 8 * * 1'
 
 jobs:
   update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
       - run: |
           python generate_files.py
           git commit -am "Auto-update" && git push
-
-with:
-  token: ${{ secrets.GH_TOKEN }}

@@ -119,7 +119,7 @@ from typing import Dict, Any, Optional
 # ==== CONFIGURATION ====
 class Config:
     # File paths
-    DATA_FILE = os.environ.get("DATA_FILE", "../data/client-data.xlsx")
+    DATA_FILE = os.environ.get("DATA_FILE", "../templates/client-data.xlsx")
     OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "../schema-files")
     SITEMAP_FILE = os.environ.get("SITEMAP_FILE", "../ai-sitemap.xml")
     
@@ -732,7 +732,7 @@ on:
       - staging
       - develop
     paths: 
-      - 'data/client-data.xlsx'
+      - 'templates/client-data.xlsx'
   workflow_dispatch:
     inputs:
       environment:
@@ -913,7 +913,7 @@ jobs:
         import sys
         
         try:
-            df = pd.read_excel('data/client-data.xlsx')
+            df = pd.read_excel('templates/client-data.xlsx')
             print(f'✓ Excel file loaded: {df.shape}')
             
             # Check for required columns
@@ -1245,7 +1245,7 @@ ENABLE_SEARCH_PING=false
 VALIDATE_URLS=false
 
 # File paths (relative to project root)
-DATA_FILE=data/client-data.xlsx
+DATA_FILE=templates/client-data.xlsx
 OUTPUT_DIR=schema-files
 SITEMAP_FILE=ai-sitemap.xml
 
@@ -1276,7 +1276,7 @@ ENABLE_SEARCH_PING=false
 VALIDATE_URLS=true
 
 # Standard paths
-DATA_FILE=data/client-data.xlsx
+DATA_FILE=templates/client-data.xlsx
 OUTPUT_DIR=schema-files
 SITEMAP_FILE=ai-sitemap.xml
 
@@ -1307,7 +1307,7 @@ ENABLE_SEARCH_PING=true
 VALIDATE_URLS=true
 
 # Standard paths
-DATA_FILE=data/client-data.xlsx
+DATA_FILE=templates/client-data.xlsx
 OUTPUT_DIR=schema-files
 SITEMAP_FILE=ai-sitemap.xml
 
@@ -1531,8 +1531,8 @@ if [ ! -f "generate_sitemaps.py" ]; then
     MISSING_FILES+=("generate_sitemaps.py")
 fi
 
-if [ ! -f "data/client-data.xlsx" ]; then
-    MISSING_FILES+=("data/client-data.xlsx")
+if [ ! -f "templates/client-data.xlsx" ]; then
+    MISSING_FILES+=("templates/client-data.xlsx")
 fi
 
 if [ ${#MISSING_FILES[@]} -gt 0 ]; then
@@ -1641,7 +1641,7 @@ echo ""
 echo "Next steps:"
 echo "1. Copy your workflow files to .github/workflows/"
 echo "2. Copy your Python scripts to ai-generators/"
-echo "3. Add your data file to data/client-data.xlsx"
+echo "3. Add your data file to templates/client-data.xlsx"
 echo "4. Configure repository variables:"
 echo "   - Go to Settings → Secrets and variables → Actions → Variables"
 echo "   - Add SITE_BASE_URL with your domain"
@@ -1700,7 +1700,7 @@ def test_file_structure():
         'ai-generators/generate_files_xlsx.py',
         'ai-generators/requirements.txt',
         'generate_sitemaps.py',
-        'data/client-data.xlsx'
+        'templates/client-data.xlsx'
     ]
     
     all_good = True
@@ -1751,11 +1751,11 @@ def test_data_file():
     try:
         import pandas as pd
         
-        if not Path('data/client-data.xlsx').exists():
-            print("   ❌ data/client-data.xlsx not found")
+        if not Path('templates/client-data.xlsx').exists():
+            print("   ❌ templates/client-data.xlsx not found")
             return False
         
-        df = pd.read_excel('data/client-data.xlsx')
+        df = pd.read_excel('templates/client-data.xlsx')
         print(f"   ✅ Excel file loaded: {df.shape[0]} rows, {df.shape[1]} columns")
         
         # Check required columns
@@ -1829,7 +1829,7 @@ def test_local_generation():
         try:
             from generate_files_xlsx import load_client_data, generate_files_from_row
             
-            df = load_client_data('data/client-data.xlsx')
+            df = load_client_data('templates/client-data.xlsx')
             print(f"   ✅ Data loaded: {len(df)} rows")
             
             if len(df) > 0:
@@ -1940,7 +1940,7 @@ Use this checklist when configuring a new deployment:
 - [ ] All required directories created
 - [ ] Workflow files deployed (`.github/workflows/`)
 - [ ] Python scripts in place (`ai-generators/`)
-- [ ] Data file added (`data/client-data.xlsx`)
+- [ ] Data file added (`templates/client-data.xlsx`)
 
 **Testing:**
 - [ ] Local environment tested

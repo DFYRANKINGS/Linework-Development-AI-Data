@@ -14,7 +14,7 @@
 // 3. Replace the values of GH_OWNER, GH_REPO, GH_BRANCH, and
 //    FILE_PATH to match your GitHub repository details.  FILE_PATH
 //    should point to the desired location of the Excel file inside
-//    your repo (e.g. 'data/client-data.xlsx').
+//    your repo (e.g. 'templates/client-data.xlsx').
 // 4. Go to **Project Settings** → **Script Properties**, click
 //    **Add Script Property**, and create a property named `GH_TOKEN`
 //    whose value is your personal access token with `contents:write`
@@ -34,7 +34,7 @@
 const GH_OWNER  = 'your-github-username-or-org'; // e.g. 'example' or 'example-org'
 const GH_REPO   = 'your-client-repo';            // repository name, e.g. 'client-website'
 const GH_BRANCH = 'main';                        // branch to push to
-const FILE_PATH = 'data/client-data.xlsx';       // path inside the repo
+const FILE_PATH = 'templates/client-data.xlsx';       // path inside the repo
 
 /**
  * Adds a custom menu to the spreadsheet for committing the workbook.

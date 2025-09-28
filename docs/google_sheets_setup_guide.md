@@ -136,7 +136,7 @@ Sample Client | https://sampleclient.com | Technology | "Innovation at Scale" | 
    const GH_OWNER  = 'your-github-username';     // Your GitHub username or org
    const GH_REPO   = 'your-repository-name';     // Repository name
    const GH_BRANCH = 'main';                     // Branch to push to
-   const FILE_PATH = 'data/client-data.xlsx';    // Path inside the repo
+   const FILE_PATH = 'templates/client-data.xlsx';    // Path inside the repo
    ```
 
    **Example Configuration**:
@@ -144,7 +144,7 @@ Sample Client | https://sampleclient.com | Technology | "Innovation at Scale" | 
    const GH_OWNER  = 'johndoe';
    const GH_REPO   = 'client-website';
    const GH_BRANCH = 'main';
-   const FILE_PATH = 'data/client-data.xlsx';
+   const FILE_PATH = 'templates/client-data.xlsx';
    ```
 
 ### 4.3 Add GitHub Token as Script Property
@@ -195,7 +195,7 @@ Sample Client | https://sampleclient.com | Technology | "Innovation at Scale" | 
 
 1. **Check your GitHub repository**:
    - Navigate to your GitHub repository
-   - Look for the file at the path you specified (e.g., `data/client-data.xlsx`)
+   - Look for the file at the path you specified (e.g., `templates/client-data.xlsx`)
    - The file should appear with a commit message "Update client workbook"
 
 2. **Check Apps Script logs**:

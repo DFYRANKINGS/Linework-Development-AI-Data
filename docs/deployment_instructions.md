@@ -137,7 +137,7 @@ name: Build AI files from XLSX and ping sitemap
 on:
   push:
     branches: [ main ]
-    paths: [ 'data/client-data.xlsx' ]
+    paths: [ 'templates/client-data.xlsx' ]
   workflow_dispatch:
   schedule:
     - cron: '0 3 * * 0'   # Every Sunday at 03:00 UTC
@@ -256,7 +256,7 @@ Copy the entire content of the `generate_files_xlsx.py` file to this location, b
 
 ```python
 # ==== CONFIG ====
-DATA_FILE = "../data/client-data.xlsx"  # Note: relative to ai-generators/ directory
+DATA_FILE = "../templates/client-data.xlsx"  # Note: relative to ai-generators/ directory
 OUTPUT_DIR = "../schema-files"
 SITE_BASE = os.environ.get("SITE_BASE_URL", "https://yourdomain.com")  # Use environment variable
 SITEMAP_FILE = "../ai-sitemap.xml"
@@ -290,7 +290,7 @@ Copy the entire content of the `generate_sitemaps.py` file to the repository roo
 
 ### 2.3 Add Sample Data File
 
-**File: `data/client-data.xlsx`**
+**File: `templates/client-data.xlsx`**
 
 Place your initial Excel file here. If you don't have one yet, create a simple Excel file with these columns:
 
@@ -366,7 +366,7 @@ Edit `ai-generators/generate_files_xlsx.py` to match your needs:
 1. **Update the configuration section**:
 ```python
 # ==== CONFIG ====
-DATA_FILE = "../data/client-data.xlsx"
+DATA_FILE = "../templates/client-data.xlsx"
 OUTPUT_DIR = "../schema-files"
 SITE_BASE = os.environ.get("SITE_BASE_URL", "https://your-actual-domain.com")
 SITEMAP_FILE = "../ai-sitemap.xml"
@@ -428,7 +428,7 @@ def test_imports():
 
 def test_file_paths():
     required_files = [
-        "data/client-data.xlsx",
+        "templates/client-data.xlsx",
         "ai-generators/generate_files_xlsx.py", 
         "ai-generators/requirements.txt",
         "generate_sitemaps.py"
@@ -654,7 +654,7 @@ Check the Actions logs to see if search engines were successfully pinged:
 
 **Solution**:
 1. Verify file paths in the Python scripts are correct relative to execution directory
-2. Check that `data/client-data.xlsx` exists and is committed to repository
+2. Check that `templates/client-data.xlsx` exists and is committed to repository
 3. Ensure directory structure matches expectations
 
 ### Issue: Environment Variable Not Set
@@ -713,6 +713,6 @@ Required Files:
 ├── .github/workflows/*.yml (3 files)
 ├── ai-generators/generate_files_xlsx.py
 ├── ai-generators/requirements.txt
-├── data/client-data.xlsx
+├── templates/client-data.xlsx
 └── generate_sitemaps.py
 ```

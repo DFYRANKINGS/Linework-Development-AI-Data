@@ -12,3 +12,6 @@ jobs:
       - run: |
           python generate_files.py
           git commit -am "Auto-update" && git push
+
+with:
+  token: ${{ secrets.GH_TOKEN }}

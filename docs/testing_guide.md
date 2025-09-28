@@ -46,7 +46,7 @@ set SITE_BASE_URL=https://your-test-domain.com
 
 ### Sample Test Data
 
-Create comprehensive test data in `data/client-data.xlsx` for thorough testing:
+Create comprehensive test data in `templates/client-data.xlsx` for thorough testing:
 
 | client_name | website | category | tagline | description | business_hours | year_founded | number_of_employees | address | phone | email |
 |-------------|---------|----------|---------|-------------|----------------|--------------|-------------------|---------|-------|-------|
@@ -148,8 +148,8 @@ test_data = [
 # Create DataFrame and save
 df = pd.DataFrame(test_data)
 os.makedirs("data", exist_ok=True)
-df.to_excel("data/client-data.xlsx", index=False)
-print("✓ Test data created at data/client-data.xlsx")
+df.to_excel("templates/client-data.xlsx", index=False)
+print("✓ Test data created at templates/client-data.xlsx")
 print(f"✓ Created {len(test_data)} test records")
 ```
 
@@ -273,7 +273,7 @@ ls sitemaps/ | grep -i "placeholder\|yourdomain"
 1. **Test with missing Excel file**:
 ```bash
 # Rename the data file temporarily
-mv data/client-data.xlsx data/client-data.xlsx.backup
+mv templates/client-data.xlsx templates/client-data.xlsx.backup
 
 # Run generator (should handle gracefully)
 cd ai-generators
@@ -281,7 +281,7 @@ python generate_files_xlsx.py
 cd ..
 
 # Restore file
-mv data/client-data.xlsx.backup data/client-data.xlsx
+mv templates/client-data.xlsx.backup templates/client-data.xlsx
 ```
 
 2. **Test with corrupted Excel file**:
@@ -353,7 +353,7 @@ rm data/empty.xlsx
 
 1. **Commit test data to repository**:
 ```bash
-git add data/client-data.xlsx
+git add templates/client-data.xlsx
 git commit -m "Add test data for workflow testing"
 git push origin main
 ```
@@ -431,7 +431,7 @@ git push origin main
 # Add a new row to test data
 python -c "
 import pandas as pd
-df = pd.read_excel('data/client-data.xlsx')
+df = pd.read_excel('templates/client-data.xlsx')
 new_row = {
     'client_name': 'Auto Test Corp',
     'website': 'https://auto-test.com', 
@@ -446,11 +446,11 @@ new_row = {
     'email': 'auto@test.com'
 }
 df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-df.to_excel('data/client-data.xlsx', index=False)
+df.to_excel('templates/client-data.xlsx', index=False)
 print('✓ Added test row for automation testing')
 "
 
-git add data/client-data.xlsx
+git add templates/client-data.xlsx
 git commit -m "Add auto-test data to trigger workflow"
 git push origin main
 ```
@@ -547,10 +547,10 @@ print(f'✓ Created large test dataset with {len(test_data)} records')
 2. **Test with large dataset**:
 ```bash
 # Backup original data
-cp data/client-data.xlsx data/client-data-original.xlsx
+cp templates/client-data.xlsx data/client-data-original.xlsx
 
 # Use large dataset
-cp data/client-data-large.xlsx data/client-data.xlsx
+cp data/client-data-large.xlsx templates/client-data.xlsx
 
 # Run local test first
 cd ai-generators
@@ -562,7 +562,7 @@ time python generate_sitemaps.py
 
 3. **Commit and test workflow**:
 ```bash
-git add data/client-data.xlsx
+git add templates/client-data.xlsx
 git commit -m "Test with large dataset (50 records)"
 git push origin main
 # Monitor workflow performance in Actions tab
@@ -576,8 +576,8 @@ git push origin main
 
 5. **Restore original data**:
 ```bash
-mv data/client-data-original.xlsx data/client-data.xlsx
-git add data/client-data.xlsx
+mv data/client-data-original.xlsx templates/client-data.xlsx
+git add templates/client-data.xlsx
 git commit -m "Restore original test data"
 git push origin main
 ```
@@ -1142,5 +1142,5 @@ python validate_output.py && python generate_test_report.py
 rm -rf schema-files/* sitemaps/* ai-sitemap.xml test_report.*
 
 # Reset to original state
-git checkout -- data/client-data.xlsx
+git checkout -- templates/client-data.xlsx
 ```

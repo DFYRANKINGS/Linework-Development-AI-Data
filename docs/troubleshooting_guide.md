@@ -45,12 +45,12 @@ except ImportError as e:
 
 # Check Excel file
 echo -e "\n=== DATA FILE ==="
-if [ -f "data/client-data.xlsx" ]; then
+if [ -f "templates/client-data.xlsx" ]; then
     echo "✓ client-data.xlsx found"
     python -c "
 import pandas as pd
 try:
-    df = pd.read_excel('data/client-data.xlsx')
+    df = pd.read_excel('templates/client-data.xlsx')
     print(f'  Shape: {df.shape}')
     print(f'  Columns: {list(df.columns)[:5]}...' if len(df.columns) > 5 else f'  Columns: {list(df.columns)}')
 except Exception as e:
@@ -240,8 +240,8 @@ fi
 2. **Fix File Path**:
    ```python
    # In generate_files_xlsx.py, check the DATA_FILE setting
-   DATA_FILE = "data/client-data.xlsx"  # Correct path from ai-generators/ directory
-   # Should be: DATA_FILE = "../data/client-data.xlsx"
+   DATA_FILE = "templates/client-data.xlsx"  # Correct path from ai-generators/ directory
+   # Should be: DATA_FILE = "../templates/client-data.xlsx"
    ```
 
 3. **Verify File Integrity**:
@@ -250,7 +250,7 @@ fi
    python -c "
    import pandas as pd
    try:
-       df = pd.read_excel('data/client-data.xlsx')
+       df = pd.read_excel('templates/client-data.xlsx')
        print(f'✓ File readable, shape: {df.shape}')
    except Exception as e:
        print(f'✗ File error: {e}')
@@ -336,7 +336,7 @@ fi
    ```python
    # Check for empty data
    import pandas as pd
-   df = pd.read_excel('data/client-data.xlsx')
+   df = pd.read_excel('templates/client-data.xlsx')
    
    print(f"Total rows: {len(df)}")
    print(f"Rows with client_name: {df['client_name'].notna().sum()}")
@@ -586,7 +586,7 @@ fi
    ```
 
 2. **Update Domain Data**:
-   - Edit `data/client-data.xlsx`
+   - Edit `templates/client-data.xlsx`
    - Replace placeholder domains with real domains
    - Common placeholders to replace:
      ```
@@ -992,8 +992,8 @@ If data is corrupted:
 2. **Restore Data File**:
    ```bash
    # Restore from specific commit
-   git checkout COMMIT_HASH -- data/client-data.xlsx
-   git add data/client-data.xlsx
+   git checkout COMMIT_HASH -- templates/client-data.xlsx
+   git add templates/client-data.xlsx
    git commit -m "Restore data from backup"
    git push
    ```
@@ -1063,7 +1063,7 @@ python -c "import pandas as pd, yaml, openpyxl; print('✓ All imports OK')"
 # Quick file generation test
 cd ai-generators && python -c "
 from generate_files_xlsx import load_client_data
-df = load_client_data('../data/client-data.xlsx')
+df = load_client_data('../templates/client-data.xlsx')
 print(f'✓ Loaded {len(df)} rows')
 "
 

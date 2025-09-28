@@ -1,30 +1,30 @@
 """
 generate_files_updated.py
 
-This script reads a single‐client CSV file and generates a set of
+This script reads a single‐client XLSX file and generates a set of
 structured data files (YAML, JSON, Markdown) and updates a sitemap
 according to the folder layout used in the AI Visibility project.
 
 ## Usage
 
 ```
-python generate_files_updated.py [path_to_csv] [output_dir]
+python generate_files_updated.py [path_to_xlsx] [output_dir]
 ```
 
-If `path_to_csv` is not provided, it defaults to `data/client-data.csv`
+If `path_to_xlsx` is not provided, it defaults to `templates/client-data.xlsx`
 relative to the current working directory. If `output_dir` is not
 provided, it defaults to the current working directory.  The script
-expects that the CSV contains exactly one row of data describing a
+expects that the XLSX contains exactly one row of data describing a
 single client. If you have multiple clients, place each client in
 their own repository and run this script separately in each repo.
 
 ## Customising the script
 
-* **Column names:**  The script expects certain columns in the CSV,
+* **Column names:**  The script expects certain columns in the XLSX,
   such as `client_name`, `website`, `category`, `tagline`,
   `description`, `business_hours`, `year_founded`,
   `number_of_employees`, `address`, `phone`, `email` and `licenses`.
-  If your CSV uses different column names, update the keys in the
+  If your XLSX uses different column names, update the keys in the
   `core` dictionary below accordingly.
 
 * **Services:** Columns whose names start with `service_` will be
@@ -38,9 +38,9 @@ their own repository and run this script separately in each repo.
 
 * **Extending to FAQs, products, etc.:**  To generate other kinds
   of content (e.g. FAQs, products), you can either add additional
-  columns to the CSV with predictable names (e.g. `faq_1_question`,
-  `faq_1_answer`, etc.), or store those records in separate tabs of
-  an Excel file.  You can then extend this script to parse those
+  columns to the XLSX with predictable names (e.g. `faq_1_question`,
+  `faq_1_answer`, etc.), or store those records in separate sheets of
+  the Excel file.  You can then extend this script to parse those
   fields and write the appropriate YAML/JSON files.  The placeholder
   section marked `# TODO: handle FAQ, products, and other sections` is
   where you would add such logic.
@@ -56,13 +56,11 @@ their own repository and run this script separately in each repo.
   engines when the sitemap changes, configure your GitHub Actions
   workflow to run this script on both `push` and `schedule` events.
   After the script runs, you can use a curl command in the same
-  workflow to ping search engines.  For example, see the example
-  `Ping Google About Updated Sitemap` workflow which sends a GET
-  request to Google to notify it of the updated sitemap【977096722945847†L44-L88】.
+  workflow to ping search engines.
 
 The script uses only the Python standard library and `pandas` for
-data handling.  Make sure to add `pandas` and `pyyaml` (for YAML
-support) to your `requirements.txt` file.
+data handling.  Make sure to add `pandas`, `pyyaml` (for YAML
+support), and `openpyxl` (for Excel support) to your `requirements.txt` file.
 """
 
 import os
@@ -98,14 +96,14 @@ def ensure_directories(base_dir: str) -> None:
 
 
 def parse_core_info(row: pd.Series) -> Dict[str, Any]:
-    """Extract the core information for the client from the CSV row.
+    """Extract the core information for the client from the XLSX row.
 
-    Adjust the keys in this function to match your CSV columns.
+    Adjust the keys in this function to match your XLSX columns.
 
     Parameters
     ----------
     row : pd.Series
-        The row from the CSV representing a single client.
+        The row from the XLSX representing a single client.
 
     Returns
     -------
@@ -135,7 +133,7 @@ def parse_licenses(row: pd.Series) -> Dict[str, List[str]]:
     Parameters
     ----------
     row : pd.Series
-        The row from the CSV representing a single client.
+        The row from the XLSX representing a single client.
 
     Returns
     -------
@@ -157,7 +155,7 @@ def parse_services(row: pd.Series) -> Dict[str, List[Dict[str, Any]]]:
     Parameters
     ----------
     row : pd.Series
-        The row from the CSV representing a single client.
+        The row from the XLSX representing a single client.
 
     Returns
     -------
@@ -232,25 +230,25 @@ def update_sitemap(base_dir: str, base_url: str) -> None:
         f.write('\n'.join(lines))
 
 
-def main(csv_path: str, output_dir: str) -> None:
+def main(xlsx_path: str, output_dir: str) -> None:
     """Main entry point for the generator.
 
     Parameters
     ----------
-    csv_path : str
-        Path to the CSV file containing client data.
+    xlsx_path : str
+        Path to the XLSX file containing client data.
     output_dir : str
         Directory into which the generated files should be written.
     """
     # Ensure the directory structure exists
     ensure_directories(output_dir)
-    # Load the CSV into a DataFrame
-    df = pd.read_csv(csv_path)
+    # Load the XLSX into a DataFrame
+    df = pd.read_excel(xlsx_path)
     if df.empty:
-        raise ValueError(f"CSV '{csv_path}' is empty")
+        raise ValueError(f"XLSX '{xlsx_path}' is empty")
     if df.shape[0] != 1:
         raise ValueError(
-            f"Expected exactly one row in '{csv_path}' for one client, but got {df.shape[0]} rows."
+            f"Expected exactly one row in '{xlsx_path}' for one client, but got {df.shape[0]} rows."
         )
     row = df.iloc[0]
     # Parse sections
@@ -286,7 +284,7 @@ def main(csv_path: str, output_dir: str) -> None:
 
 
 if __name__ == '__main__':
-    # Determine the CSV path and output directory from command line arguments
-    csv_arg = sys.argv[1] if len(sys.argv) > 1 else 'data/client-data.csv'
+    # Determine the XLSX path and output directory from command line arguments
+    xlsx_arg = sys.argv[1] if len(sys.argv) > 1 else 'templates/client-data.xlsx'
     out_arg = sys.argv[2] if len(sys.argv) > 2 else '.'
-    main(csv_arg, out_arg)
+    main(xlsx_arg, out_arg)

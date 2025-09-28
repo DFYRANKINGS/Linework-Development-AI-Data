@@ -51,7 +51,7 @@ Google Sheets ──➤ Google Apps Script ──➤ GitHub Repository
 - ✅ **File Generator** (`generate_files_xlsx.py`) - Converts Excel data to JSON/YAML/MD/LLM files  
 - ✅ **Sitemap Generator** (`generate_sitemaps.py`) - Creates XML sitemaps for SEO
 - ✅ **GitHub Workflows** (3 YAML files) - Automates the entire process
-- ✅ **Sample Data** (`client-data.xlsx`) - Template data structure
+- ✅ **Sample Data** (`templates/client-data.xlsx`) - Template data structure
 
 ### Business Value
 - **AI Discoverability**: Makes business data findable by AI systems

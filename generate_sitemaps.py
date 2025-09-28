@@ -8,7 +8,7 @@ FINAL robust sitemap generator (v4).
 - Writes a detailed report at sitemaps/_report.txt and prints it to stdout.
 
 Usage: python generate_sitemaps.py
-Expected Excel at repo root: client-data.xlsx
+Expected Excel at templates/client-data.xlsx
 """
 
 from __future__ import annotations
@@ -78,9 +78,9 @@ def iso_utc_from_mtime(p: Path) -> str:
 def main():
     report = []
     try:
-        xlsx = Path("client-data.xlsx")
+        xlsx = Path("templates/client-data.xlsx")
         if not xlsx.exists():
-            raise FileNotFoundError("Missing client-data.xlsx at repo root. Place it next to generate_sitemaps.py.")
+            raise FileNotFoundError("Missing templates/client-data.xlsx. Place it next to generate_sitemaps.py.")
 
         try:
             df = pd.read_excel(xlsx)

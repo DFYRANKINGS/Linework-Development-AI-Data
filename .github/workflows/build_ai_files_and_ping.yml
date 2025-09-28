@@ -1,46 +1,31 @@
-name: Build AI files and ping sitemap
-
+name: Build AI Files and Ping
 on:
   push:
-    branches: [ main ]
-    paths: [ 'data/client-data.xlsx' ]
-  schedule:
-    # Runs once per week at 03:00 UTC on Sunday (0 * * * 0)
-    - cron: '0 3 * * 0'
+    paths:
+      - 'templates/client-data.xlsx'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      with:
-  token: ${{ secrets.GH_TOKEN }}
-
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-
+          python-version: '3.9'
       - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Generate files and sitemap
         run: |
-          # Run the Python generator. Adjust the path if needed.
+          pip install pandas openpyxl requests
+      - name: Generate AI files
+        run: |
           python ai-generators/generate_files_updated.py
-
-      - name: Commit changes
+      - name: Commit and push changes
         run: |
-          git config --global user.name 'GitHub Action'
-          git config --global user.email 'actions@github.com'
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
           git add .
-          git commit -m "Update generated AI files" || echo "No changes"
+          git commit -m "Auto-generated AI files" || exit 0
           git push
-
-      - name: Ping search engines
-        if: github.ref == 'refs/heads/main'
-        run: |
-          # Replace <your-domain> with the domain where your sitemap is hosted
-          curl "http://www.google.com/ping?sitemap=https://<your-domain>/ai-sitemap.xml"
-          curl "https://www.bing.com/ping?sitemap=https://<your-domain>/ai-sitemap.xml"

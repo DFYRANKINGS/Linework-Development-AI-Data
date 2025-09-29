@@ -29,7 +29,7 @@ SHEET_CONFIG = {
         'filename_base': 'faq',
         'is_list': True
     },
-    'Help Articles': {  # Renamed from "Blog Summaries"
+    'Help Articles': {  # ← Renamed from "Blog Summaries"
         'output_dir': 'schema-files/help-articles',
         'filename_base': 'articles-list',
         'is_list': True
@@ -156,4 +156,70 @@ def main():
     args = parser.parse_args()
 
     print(f"📂 Working directory: {os.getcwd()}")
-    if 
+    if not os.path.exists(args.input):
+        print(f"❌ FATAL: Input file NOT FOUND: {args.input}")
+        exit(1)
+
+    print(f"✅ Processing: {args.input}")
+
+    # Load all sheets
+    try:
+        xls = pd.ExcelFile(args.input)
+        print(f"📄 Found sheets: {xls.sheet_names}")
+    except Exception as e:
+        print(f"❌ Error loading Excel file: {e}")
+        exit(1)
+
+    # Store core_info for sitemap URL
+    site_url = None
+
+    # Process each configured sheet
+    for sheet_name, config in SHEET_CONFIG.items():
+        if sheet_name not in xls.sheet_names:
+            print(f"⚠️ Sheet '{sheet_name}' not found — skipping")
+            continue
+
+        print(f"\n--- Processing sheet: {sheet_name} ---")
+        df = pd.read_excel(xls, sheet_name=sheet_name, header=None)
+        print(f"📊 Shape: {df.shape}")
+
+        # Parse data
+        data = parse_sheet_to_dict_or_list(df, config['is_list'])
+
+        if config['is_list']:
+            print(f"📦 Parsed {len(data)} records")
+        else:
+            print(f"📦 Parsed {len(data)} fields")
+            # If this is core_info, extract website
+            if sheet_name == 'core_info':
+                site_url = data.get('website')
+
+        # Write files
+        output_dir = Path(config['output_dir'])
+        success = write_json_yaml(data, output_dir, config['filename_base'])
+
+        if not success:
+            print(f"❌ Failed to write output for {sheet_name}")
+
+    # Save site URL for sitemap
+    if site_url:
+        config_dir = Path(".github/config")
+        config_dir.mkdir(parents=True, exist_ok=True)
+        with open(config_dir / "site_url.txt", "w") as f:
+            f.write(site_url.strip())
+        print(f"\n🌐 Site URL saved for sitemap: {site_url}")
+    else:
+        fallback_url = os.getenv('SITE_BASE_URL')
+        if fallback_url:
+            config_dir = Path(".github/config")
+            config_dir.mkdir(parents=True, exist_ok=True)
+            with open(config_dir / "site_url.txt", "w") as f:
+                f.write(fallback_url.strip())
+            print(f"\n🌐 Used fallback SITE_BASE_URL: {fallback_url}")
+        else:
+            print(f"\n⚠️ WARNING: No website found in core_info and no SITE_BASE_URL secret!")
+
+    print("\n🎉 All sheets processed successfully!")
+
+if __name__ == "__main__":
+    main()

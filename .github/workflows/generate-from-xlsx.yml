@@ -1,137 +1,97 @@
-# ai-generators/generate_files_from_xlsx.py
+name: Generate JSON/YAML from XLSX and Update Sitemap
 
-import argparse
-import os
-import json
-import yaml
-from pathlib import Path
-import pandas as pd
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'templates/*.xlsx'
 
-def load_xlsx_to_dict(xlsx_path):
-    print(f"📂 Reading Excel file: {xlsx_path}")
-    try:
-        df = pd.read_excel(xlsx_path, sheet_name=0, header=None)
-        print(f"📊 Sheet loaded. Shape: {df.shape}")
-        print("📋 First 5 rows:")
-        print(df.head().to_string())
-    except Exception as e:
-        print(f"❌ ERROR loading Excel: {e}")
-        return {}
+jobs:
+  generate-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
 
-    data = {}
-    for idx, row in df.iterrows():
-        if len(row) >= 2:
-            key_cell = row[0]
-            value_cell = row[1] if len(row) > 1 else None
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-            if pd.isna(key_cell) or pd.isna(value_cell):
-                print(f"⚠️ Skipping row {idx+1}: missing key or value")
-                continue
+      - name: Install Dependencies
+        run: |
+          pip install pandas openpyxl PyYAML
 
-            key = str(key_cell).strip()
-            value = value_cell
+      - name: Get Changed XLSX Files via Git Diff
+        id: get_files
+        run: |
+          echo "📄 Comparing against base commit: ${{ github.event.before }}"
+          BEFORE_COMMIT=${{ github.event.before }}
+          if [[ "$BEFORE_COMMIT" == "0000000000000000000000000000000000000000" ]]; then
+            BEFORE_COMMIT=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+          fi
 
-            # Try to convert numeric/bool if possible
-            if isinstance(value, str):
-                if value.lower() in ['true', 'false']:
-                    value = value.lower() == 'true'
-                else:
-                    try:
-                        value = int(value)
-                    except:
-                        try:
-                            value = float(value)
-                        except:
-                            pass
-            data[key] = value
-            print(f"✅ Parsed: {key} = {value}")
+          CHANGED_FILES=$(git diff --name-only --diff-filter=AM "$BEFORE_COMMIT" HEAD | grep '^templates/.*\.xlsx$' || true)
 
-    print(f"📦 Final parsed data ({len(data)} keys):")
-    for k, v in data.items():
-        print(f"   {k}: {v}")
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "⚠️ No .xlsx files detected in templates/ in this push."
+          else
+            echo "✅ Detected changed XLSX files:"
+            echo "$CHANGED_FILES"
+          fi
 
-    return data
+          echo "changed_xlsx=$CHANGED_FILES" >> $GITHUB_ENV
 
-def write_json_yaml(data, base_output_path, filename_base):
-    """Write both .json and .yaml files"""
-    json_path = base_output_path / f"{filename_base}.json"
-    yaml_path = base_output_path / f"{filename_base}.yaml"
+      - name: Process Each XLSX File
+        if: env.changed_xlsx != ''
+        run: |
+          echo "⚙️ Processing detected XLSX files..."
+          while IFS= read -r xlsx_file; do
+            if [ -n "$xlsx_file" ] && [ -f "$xlsx_file" ]; then
+              echo "📄 Processing: $xlsx_file"
+              python ai-generators/generate_files_from_xlsx.py --input "$xlsx_file"
+            else
+              echo "❌ ERROR: File not found: '$xlsx_file'"
+            fi
+          done <<< "${{ env.changed_xlsx }}"
 
-    # Ensure directory exists
-    base_output_path.mkdir(parents=True, exist_ok=True)
+      - name: Verify All Generated Files
+        run: |
+          echo "🔍 VERIFYING OUTPUTS — Listing all generated JSON/YAML files:"
+          echo "=========================================================="
+          find schema-files -type f KATEX_INLINE_OPEN -name "*.json" -o -name "*.yaml" KATEX_INLINE_CLOSE -exec ls -la {} \; | sort
+          TOTAL_JSON=$(find schema-files -name "*.json" | wc -l)
+          TOTAL_YAML=$(find schema-files -name "*.yaml" | wc -l)
+          echo "----------------------------------------------------------"
+          echo "✅ Total .json files generated: $TOTAL_JSON"
+          echo "✅ Total .yaml files generated: $TOTAL_YAML"
+          echo ""
+          echo "📄 PREVIEW: ai-sitemap.xml (first 20 lines)"
+          echo "=========================================================="
+          head -n 20 ai-sitemap.xml 2>/dev/null || echo "❌ ai-sitemap.xml not found — check generate_sitemaps.py"
 
-    # Write JSON
-    try:
-        with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"💾 Wrote JSON: {json_path}")
-    except Exception as e:
-        print(f"❌ Failed to write JSON: {e}")
+      - name: Generate or Update Sitemap
+        run: |
+          python generate_sitemaps.py
 
-    # Write YAML
-    try:
-        with open(yaml_path, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, allow_unicode=True, sort_keys=False)
-        print(f"💾 Wrote YAML: {yaml_path}")
-    except Exception as e:
-        print(f"❌ Failed to write YAML: {e}")
+      - name: Configure Git & Attach to Branch
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git switch --detach ${{ github.ref_name }}
 
-    return json_path.exists() and yaml_path.exists()
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input', required=True, help='Path to input .xlsx file')
-    args = parser.parse_args()
-
-    # Debug: show current working dir and list files
-    print(f"(pwd) Current working directory: {os.getcwd()}")
-    print(f"📁 Files in templates/:")
-    os.system("ls -la templates/")
-
-    if not os.path.exists(args.input):
-        print(f"❌ FATAL: Input file NOT FOUND: {args.input}")
-        exit(1)
-    else:
-        print(f"✅ Input file FOUND: {args.input}")
-
-    # Load data
-    data = load_xlsx_to_dict(args.input)
-
-    if len(data) == 0:
-        print("❌ No data parsed from XLSX. Check format: Column A = keys, Column B = values.")
-        exit(1)
-
-    # Determine output filename from input
-    input_stem = Path(args.input).stem
-    output_name = input_stem.replace("client-", "main-")
-
-    # Output to schema-files/organization/
-    output_dir = Path("schema-files/organization")
-    
-    success = write_json_yaml(data, output_dir, output_name)
-
-    if not success:
-        print("❌ File writing failed!")
-        exit(1)
-
-    # Also save SITE_BASE_URL if present in data (for sitemap later)
-    site_url = data.get('website') or data.get('Website') or data.get('URL') or os.getenv('SITE_BASE_URL')
-    if site_url:
-        config_dir = Path(".github/config")
-        config_dir.mkdir(parents=True, exist_ok=True)
-        with open(config_dir / "site_url.txt", "w") as f:
-            f.write(site_url.strip())
-        print(f"🌐 Site URL saved: {site_url}")
-    else:
-
-    - name: Verify Generated Files Exist
-  run: |
-    echo "🔍 Checking generated files..."
-    find schema-files -name "*.json" -o -name "*.yaml" | sort
-    echo "---"
-    echo "📄 ai-sitemap.xml preview:"
-    head -n 15 ai-sitemap.xml 2>/dev/null || echo "No sitemap yet"
-        print("⚠️ No 'website' key found in XLSX and no SITE_BASE_URL secret set.")
-
-if __name__ == "__main__":
-    main()
+      - name: Commit and Push Changes
+        run: |
+          git add .
+          git status
+          if ! git diff --cached --quiet; then
+            git commit -m "🤖 Auto-generate files from XLSX and update sitemap"
+            git push origin ${{ github.ref_name }}
+            echo "✅ Push successful! All files committed."
+          else
+            echo "⏭️ No changes detected — nothing to commit or push."
+          fi

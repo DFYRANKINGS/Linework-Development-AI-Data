@@ -2,6 +2,8 @@ name: Generate JSON/YAML from XLSX and Update Sitemap
 
 on:
   push:
+    branches:
+      - main  # or 'master', adjust as needed
     paths:
       - 'templates/*.xlsx'
 
@@ -12,6 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.GH_TOKEN }}  # 👈 Use your token for push access
           fetch-depth: 0
 
       - name: Set up Python
@@ -28,23 +31,26 @@ jobs:
         env:
           PAYLOAD: ${{ toJson(github.event) }}
         run: |
-          echo "Parsing push event for changed files..."
-          # Extract added/modified files from push event
-          ADDED_MODIFIED=$(echo "$PAYLOAD" | jq -r '.commits[].added[], .commits[].modified[]' | grep '^templates/.*\.xlsx$' || true)
+          echo "📄 Parsing push event for changed files..."
+          ADDED_MODIFIED=$(echo "$PAYLOAD" | jq -r '.commits[].added[], .commits[].modified[]' | grep '^templates/.*\.xlsx$' | sort -u || true)
+          if [ -z "$ADDED_MODIFIED" ]; then
+            echo "⚠️ No .xlsx files found in templates/"
+          else
+            echo "✅ Detected XLSX files:"
+            echo "$ADDED_MODIFIED"
+          fi
           echo "changed_xlsx=$ADDED_MODIFIED" >> $GITHUB_ENV
-          echo "📄 Detected XLSX files:"
-          echo "$ADDED_MODIFIED"
 
       - name: Process Each XLSX File
         if: env.changed_xlsx != ''
         run: |
-          echo "Processing files..."
+          echo "⚙️ Processing detected XLSX files..."
           while IFS= read -r xlsx_file; do
             if [ -n "$xlsx_file" ] && [ -f "$xlsx_file" ]; then
-              echo "⚙️ Processing: $xlsx_file"
+              echo "📄 Processing: $xlsx_file"
               python ai-generators/generate_files_from_xlsx.py --input "$xlsx_file"
             else
-              echo "⚠️ Skipped (file not found or empty): $xlsx_file"
+              echo "⚠️ Skipped (file not found or empty): '$xlsx_file'"
             fi
           done <<< "${{ env.changed_xlsx }}"
 
@@ -52,11 +58,24 @@ jobs:
         run: |
           python generate_sitemaps.py
 
-      - name: Commit and Push Changes
+      - name: Configure Git & Attach to Branch
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          # Ensure we're on the correct branch (not detached HEAD)
+          git switch --detach ${{ github.ref_name }}
+
+      - name: Commit and Push Changes
+        run: |
           git add .
           git status
-          git commit -m "Auto-generate files from XLSX and update sitemap" || echo "⏭️ No changes to commit"
-          git push
+          # Only commit if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "🤖 Auto-generate files from XLSX and update sitemap"
+            echo "✅ Changes committed."
+            # Push to current branch
+            git push origin ${{ github.ref_name }}
+            echo "✅ Changes pushed."
+          else
+            echo "⏭️ No file changes detected. Nothing to commit or push."
+          fi

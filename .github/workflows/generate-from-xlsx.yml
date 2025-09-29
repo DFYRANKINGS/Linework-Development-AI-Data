@@ -123,6 +123,14 @@ def main():
             f.write(site_url.strip())
         print(f"🌐 Site URL saved: {site_url}")
     else:
+
+    - name: Verify Generated Files Exist
+  run: |
+    echo "🔍 Checking generated files..."
+    find schema-files -name "*.json" -o -name "*.yaml" | sort
+    echo "---"
+    echo "📄 ai-sitemap.xml preview:"
+    head -n 15 ai-sitemap.xml 2>/dev/null || echo "No sitemap yet"
         print("⚠️ No 'website' key found in XLSX and no SITE_BASE_URL secret set.")
 
 if __name__ == "__main__":

@@ -86,8 +86,12 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
+          # 👇 FORCE A CHANGE TO ENSURE GIT ALWAYS COMMITS
+          date +"%Y-%m-%d %H:%M:%S" > .github/workflow-last-run.txt
+
           git add .
           git status
+
           if ! git diff --cached --quiet; then
             git commit -m "🤖 Auto-generate files from XLSX and update sitemap"
             git push origin ${{ github.ref_name }}

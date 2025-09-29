@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 👈 Critical fix!
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -23,28 +23,30 @@ jobs:
         run: |
           pip install pandas openpyxl PyYAML
 
-      - name: List Changed XLSX Files
-        id: changed_files
+      - name: Get Changed XLSX Files
+        id: get_files
+        env:
+          PAYLOAD: ${{ toJson(github.event) }}
         run: |
-          if git rev-parse HEAD^ >/dev/null 2>&1; then
-            FILES=$(git diff --name-only HEAD^ HEAD | grep 'templates/.*\.xlsx' || echo "")
-          else
-            FILES=$(find templates -name "*.xlsx" -type f | sed 's|^./||' || echo "")
-          fi
-          echo "changed_xlsx=$FILES" >> $GITHUB_ENV
-          echo "📄 Detected XLSX files: $FILES"
+          echo "Parsing push event for changed files..."
+          # Extract added/modified files from push event
+          ADDED_MODIFIED=$(echo "$PAYLOAD" | jq -r '.commits[].added[], .commits[].modified[]' | grep '^templates/.*\.xlsx$' || true)
+          echo "changed_xlsx=$ADDED_MODIFIED" >> $GITHUB_ENV
+          echo "📄 Detected XLSX files:"
+          echo "$ADDED_MODIFIED"
 
       - name: Process Each XLSX File
         if: env.changed_xlsx != ''
         run: |
-          for xlsx_file in ${{ env.changed_xlsx }}; do
-            if [ -f "$xlsx_file" ]; then
+          echo "Processing files..."
+          while IFS= read -r xlsx_file; do
+            if [ -n "$xlsx_file" ] && [ -f "$xlsx_file" ]; then
               echo "⚙️ Processing: $xlsx_file"
               python ai-generators/generate_files_from_xlsx.py --input "$xlsx_file"
             else
-              echo "⚠️ File not found: $xlsx_file"
+              echo "⚠️ Skipped (file not found or empty): $xlsx_file"
             fi
-          done
+          done <<< "${{ env.changed_xlsx }}"
 
       - name: Generate or Update Sitemap
         run: |

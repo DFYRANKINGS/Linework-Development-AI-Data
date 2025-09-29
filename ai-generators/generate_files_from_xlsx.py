@@ -29,9 +29,9 @@ SHEET_CONFIG = {
         'filename_base': 'faq',
         'is_list': True
     },
-    'Blog Summaries': {
-        'output_dir': 'schema-files/blogs',
-        'filename_base': 'blogs-list',
+    'Help Articles': {
+        'output_dir': 'schema-files/help-articles',
+        'filename_base': 'articles-list',
         'is_list': True
     },
     'Reviews': {

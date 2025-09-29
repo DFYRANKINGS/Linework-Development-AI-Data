@@ -3,7 +3,7 @@ name: Generate JSON/YAML from XLSX and Update Sitemap
 on:
   push:
     paths:
-      - 'templates/*.xlsx'   # Trigger only when XLSX files are added/modified in /templates
+      - 'templates/*.xlsx'
 
 jobs:
   generate-and-update:
@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 👈 Critical fix!
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -24,15 +26,23 @@ jobs:
       - name: List Changed XLSX Files
         id: changed_files
         run: |
-          echo "changed_xlsx=$(git diff --name-only HEAD^ HEAD | grep 'templates/.*\.xlsx' | tr '\n' ' ')" >> $GITHUB_ENV
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            FILES=$(git diff --name-only HEAD^ HEAD | grep 'templates/.*\.xlsx' || echo "")
+          else
+            FILES=$(find templates -name "*.xlsx" -type f | sed 's|^./||' || echo "")
+          fi
+          echo "changed_xlsx=$FILES" >> $GITHUB_ENV
+          echo "📄 Detected XLSX files: $FILES"
 
       - name: Process Each XLSX File
         if: env.changed_xlsx != ''
         run: |
           for xlsx_file in ${{ env.changed_xlsx }}; do
             if [ -f "$xlsx_file" ]; then
-              echo "Processing: $xlsx_file"
+              echo "⚙️ Processing: $xlsx_file"
               python ai-generators/generate_files_from_xlsx.py --input "$xlsx_file"
+            else
+              echo "⚠️ File not found: $xlsx_file"
             fi
           done
 
@@ -46,5 +56,5 @@ jobs:
           git config --local user.name "GitHub Action"
           git add .
           git status
-          git commit -m "Auto-generate files from XLSX and update sitemap" || echo "No changes to commit"
+          git commit -m "Auto-generate files from XLSX and update sitemap" || echo "⏭️ No changes to commit"
           git push

@@ -13,7 +13,7 @@ SHEET_CONFIG = {
         'output_dir': 'schema-files/organization',
         'filename_base': 'main-data',
         'is_list': False,
-        'is_horizontal': True  # ← NEW FLAG!
+        'is_horizontal': True  # ← Handles your horizontal layout
     },
     'Services': {
         'output_dir': 'schema-files/services',
@@ -75,9 +75,9 @@ def clean_value(key, val):
     if val.lower() in ['not specified', 'n/a', '', 'none']:
         return None
 
-    # Special handling for sameAs field
+    # Special handling for sameAs field — NOW USES <|>
     if key == 'sameAs' and isinstance(val, str):
-        urls = [url.strip() for url in val.split('|') if url.strip()]
+        urls = [url.strip() for url in val.split('<|>') if url.strip()]
         return urls if urls else None
 
     # Try converting to number

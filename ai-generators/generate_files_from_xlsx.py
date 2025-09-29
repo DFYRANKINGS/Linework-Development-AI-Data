@@ -12,7 +12,8 @@ SHEET_CONFIG = {
     'core_info': {
         'output_dir': 'schema-files/organization',
         'filename_base': 'main-data',
-        'is_list': False  # Single object
+        'is_list': False,
+        'is_horizontal': True  # ← NEW FLAG!
     },
     'Services': {
         'output_dir': 'schema-files/services',
@@ -29,7 +30,7 @@ SHEET_CONFIG = {
         'filename_base': 'faq',
         'is_list': True
     },
-    'Help Articles': {  # ← Renamed from "Blog Summaries"
+    'Help Articles': {
         'output_dir': 'schema-files/help-articles',
         'filename_base': 'articles-list',
         'is_list': True
@@ -76,7 +77,6 @@ def clean_value(key, val):
 
     # Special handling for sameAs field
     if key == 'sameAs' and isinstance(val, str):
-        # Split by pipe and clean each URL
         urls = [url.strip() for url in val.split('|') if url.strip()]
         return urls if urls else None
 
@@ -90,8 +90,8 @@ def clean_value(key, val):
         return False
     return val
 
-def parse_sheet_to_dict_or_list(df, is_list=False):
-    """Convert sheet to dict (if key/value) or list of dicts (if table)"""
+def parse_sheet_to_dict_or_list(df, is_list=False, is_horizontal=False):
+    """Convert sheet to dict or list of dicts"""
     if is_list:
         # Assume first row is header
         if df.shape[0] == 0:
@@ -106,22 +106,34 @@ def parse_sheet_to_dict_or_list(df, is_list=False):
                     val = clean_value(header, row.iloc[i]) if pd.notna(row.iloc[i]) else None
                     if val is not None:
                         record[header] = val
-            if record:  # Only add non-empty records
+            if record:
                 records.append(record)
         return records
     else:
-        # Key/value pairs (Column A = key, Column B = value)
-        data = {}
-        for _, row in df.iterrows():
-            if len(row) < 2:
-                continue
-            key_cell = row.iloc[0]
-            if pd.isna(key_cell) or str(key_cell).strip() == '':
-                continue
-            key = str(key_cell).strip()
-            value = clean_value(key, row.iloc[1]) if len(row) > 1 and pd.notna(row.iloc[1]) else None
-            data[key] = value
-        return data
+        if is_horizontal and df.shape[0] >= 2:
+            # Horizontal: Row 1 = keys, Row 2 = values
+            headers = df.iloc[0].apply(lambda x: str(x).strip() if pd.notna(x) else "").tolist()
+            values = df.iloc[1].tolist()
+            data = {}
+            for i, key in enumerate(headers):
+                if i < len(values):
+                    val = clean_value(key, values[i])
+                    if val is not None:
+                        data[key] = val
+            return data
+        else:
+            # Vertical fallback: Column A = key, Column B = value
+            data = {}
+            for _, row in df.iterrows():
+                if len(row) < 2:
+                    continue
+                key_cell = row.iloc[0]
+                if pd.isna(key_cell) or str(key_cell).strip() == '':
+                    continue
+                key = str(key_cell).strip()
+                value = clean_value(key, row.iloc[1]) if len(row) > 1 and pd.notna(row.iloc[1]) else None
+                data[key] = value
+            return data
 
 def write_json_yaml(data, output_path, filename_base):
     """Write both .json and .yaml files"""
@@ -130,7 +142,6 @@ def write_json_yaml(data, output_path, filename_base):
 
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # Write JSON
     try:
         with open(json_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -139,7 +150,6 @@ def write_json_yaml(data, output_path, filename_base):
         print(f"❌ Failed to write JSON: {e}")
         return False
 
-    # Write YAML
     try:
         with open(yaml_path, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, allow_unicode=True, sort_keys=False)
@@ -162,7 +172,6 @@ def main():
 
     print(f"✅ Processing: {args.input}")
 
-    # Load all sheets
     try:
         xls = pd.ExcelFile(args.input)
         print(f"📄 Found sheets: {xls.sheet_names}")
@@ -170,10 +179,8 @@ def main():
         print(f"❌ Error loading Excel file: {e}")
         exit(1)
 
-    # Store core_info for sitemap URL
     site_url = None
 
-    # Process each configured sheet
     for sheet_name, config in SHEET_CONFIG.items():
         if sheet_name not in xls.sheet_names:
             print(f"⚠️ Sheet '{sheet_name}' not found — skipping")
@@ -183,25 +190,22 @@ def main():
         df = pd.read_excel(xls, sheet_name=sheet_name, header=None)
         print(f"📊 Shape: {df.shape}")
 
-        # Parse data
-        data = parse_sheet_to_dict_or_list(df, config['is_list'])
+        is_horizontal = config.get('is_horizontal', False)
+        data = parse_sheet_to_dict_or_list(df, config['is_list'], is_horizontal)
 
         if config['is_list']:
             print(f"📦 Parsed {len(data)} records")
         else:
             print(f"📦 Parsed {len(data)} fields")
-            # If this is core_info, extract website
             if sheet_name == 'core_info':
                 site_url = data.get('website')
 
-        # Write files
         output_dir = Path(config['output_dir'])
         success = write_json_yaml(data, output_dir, config['filename_base'])
 
         if not success:
             print(f"❌ Failed to write output for {sheet_name}")
 
-    # Save site URL for sitemap
     if site_url:
         config_dir = Path(".github/config")
         config_dir.mkdir(parents=True, exist_ok=True)

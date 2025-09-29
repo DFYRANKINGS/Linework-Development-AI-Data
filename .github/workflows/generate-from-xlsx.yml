@@ -3,7 +3,7 @@ name: Generate JSON/YAML from XLSX and Update Sitemap
 on:
   push:
     branches:
-      - main  # or 'master', adjust as needed
+      - main  # or 'master' — adjust if needed
     paths:
       - 'templates/*.xlsx'
 
@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GH_TOKEN }}  # 👈 Use your token for push access
+          token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -26,20 +26,27 @@ jobs:
         run: |
           pip install pandas openpyxl PyYAML
 
-      - name: Get Changed XLSX Files
+      - name: Get Changed XLSX Files via Git Diff
         id: get_files
-        env:
-          PAYLOAD: ${{ toJson(github.event) }}
         run: |
-          echo "📄 Parsing push event for changed files..."
-          ADDED_MODIFIED=$(echo "$PAYLOAD" | jq -r '.commits[].added[], .commits[].modified[]' | grep '^templates/.*\.xlsx$' | sort -u || true)
-          if [ -z "$ADDED_MODIFIED" ]; then
-            echo "⚠️ No .xlsx files found in templates/"
-          else
-            echo "✅ Detected XLSX files:"
-            echo "$ADDED_MODIFIED"
+          echo "📄 Comparing against base commit: ${{ github.event.before }}"
+          # Fallback: if before is all zeros (initial commit), compare to empty tree
+          BEFORE_COMMIT=${{ github.event.before }}
+          if [[ "$BEFORE_COMMIT" == "0000000000000000000000000000000000000000" ]]; then
+            BEFORE_COMMIT=4b825dc642cb6eb9a060e54bf8d69288fbee4904  # empty tree hash
           fi
-          echo "changed_xlsx=$ADDED_MODIFIED" >> $GITHUB_ENV
+
+          # Get list of added/modified xlsx files in templates/
+          CHANGED_FILES=$(git diff --name-only --diff-filter=AM "$BEFORE_COMMIT" HEAD | grep '^templates/.*\.xlsx$' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "⚠️ No .xlsx files detected in templates/ in this push."
+          else
+            echo "✅ Detected changed XLSX files:"
+            echo "$CHANGED_FILES"
+          fi
+
+          echo "changed_xlsx=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Process Each XLSX File
         if: env.changed_xlsx != ''
@@ -50,32 +57,32 @@ jobs:
               echo "📄 Processing: $xlsx_file"
               python ai-generators/generate_files_from_xlsx.py --input "$xlsx_file"
             else
-              echo "⚠️ Skipped (file not found or empty): '$xlsx_file'"
+              echo "❌ ERROR: File not found: '$xlsx_file'"
             fi
           done <<< "${{ env.changed_xlsx }}"
 
-      - name: Generate or Update Sitemap
+      - name: Verify Generated Files Exist
         run: |
-          python generate_sitemaps.py
+          echo "🔍 Checking for generated files..."
+          ls -la schema-files/organization/ || echo "📁 Directory not found or empty"
+          echo "---"
+          echo "📄 ai-sitemap.xml preview:"
+          head -n 10 ai-sitemap.xml || echo "sitemap not found"
 
       - name: Configure Git & Attach to Branch
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          # Ensure we're on the correct branch (not detached HEAD)
           git switch --detach ${{ github.ref_name }}
 
       - name: Commit and Push Changes
         run: |
           git add .
           git status
-          # Only commit if there are changes
           if ! git diff --cached --quiet; then
             git commit -m "🤖 Auto-generate files from XLSX and update sitemap"
-            echo "✅ Changes committed."
-            # Push to current branch
             git push origin ${{ github.ref_name }}
-            echo "✅ Changes pushed."
+            echo "✅ Push successful!"
           else
-            echo "⏭️ No file changes detected. Nothing to commit or push."
+            echo "⏭️ No changes to commit."
           fi

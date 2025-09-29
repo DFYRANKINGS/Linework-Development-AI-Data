@@ -1,0 +1,50 @@
+name: Generate JSON/YAML from XLSX and Update Sitemap
+
+on:
+  push:
+    paths:
+      - 'templates/*.xlsx'   # Trigger only when XLSX files are added/modified in /templates
+
+jobs:
+  generate-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install pandas openpyxl PyYAML
+
+      - name: List Changed XLSX Files
+        id: changed_files
+        run: |
+          echo "changed_xlsx=$(git diff --name-only HEAD^ HEAD | grep 'templates/.*\.xlsx' | tr '\n' ' ')" >> $GITHUB_ENV
+
+      - name: Process Each XLSX File
+        if: env.changed_xlsx != ''
+        run: |
+          for xlsx_file in ${{ env.changed_xlsx }}; do
+            if [ -f "$xlsx_file" ]; then
+              echo "Processing: $xlsx_file"
+              python ai-generators/generate_files_from_xlsx.py --input "$xlsx_file"
+            fi
+          done
+
+      - name: Generate or Update Sitemap
+        run: |
+          python generate_sitemaps.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          git status
+          git commit -m "Auto-generate files from XLSX and update sitemap" || echo "No changes to commit"
+          git push

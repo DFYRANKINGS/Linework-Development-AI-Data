@@ -59,43 +59,66 @@ jobs:
             fi
           done <<< "${{ env.changed_xlsx }}"
 
-      - name: Verify All Generated Files
+      - name: FORCE CREATE DUMMY FILES IN ALL DIRECTORIES (ENSURE GIT TRACKS THEM)
         run: |
-          echo "🔍 VERIFYING OUTPUTS — Listing all generated JSON/YAML files:"
-          echo "=========================================================="
-          find schema-files -type f KATEX_INLINE_OPEN -name "*.json" -o -name "*.yaml" KATEX_INLINE_CLOSE -exec ls -la {} \; | sort
-          TOTAL_JSON=$(find schema-files -name "*.json" | wc -l)
-          TOTAL_YAML=$(find schema-files -name "*.yaml" | wc -l)
-          echo "----------------------------------------------------------"
-          echo "✅ Total .json files generated: $TOTAL_JSON"
-          echo "✅ Total .yaml files generated: $TOTAL_YAML"
-          echo ""
-          echo "📄 PREVIEW: ai-sitemap.xml (first 20 lines)"
-          echo "=========================================================="
-          head -n 20 ai-sitemap.xml 2>/dev/null || echo "❌ ai-sitemap.xml not found — check generate_sitemaps.py"
+          mkdir -p schema-files/organization
+          mkdir -p schema-files/services
+          mkdir -p schema-files/products
+          mkdir -p schema-files/faqs
+          mkdir -p schema-files/help-articles
+          mkdir -p schema-files/reviews
+          mkdir -p schema-files/locations
+          mkdir -p schema-files/team
+          mkdir -p schema-files/awards
+          mkdir -p schema-files/press
+          mkdir -p schema-files/case-studies
+          touch schema-files/organization/.gitkeep
+          touch schema-files/services/.gitkeep
+          touch schema-files/products/.gitkeep
+          touch schema-files/faqs/.gitkeep
+          touch schema-files/help-articles/.gitkeep
+          touch schema-files/reviews/.gitkeep
+          touch schema-files/locations/.gitkeep
+          touch schema-files/team/.gitkeep
+          touch schema-files/awards/.gitkeep
+          touch schema-files/press/.gitkeep
+          touch schema-files/case-studies/.gitkeep
 
-      - name: Generate or Update Sitemap
+      - name: Generate or Update Sitemap (FORCE UPDATE)
         run: |
+          # Force update sitemap even if content didn't change
           python generate_sitemaps.py
+          # Touch it to ensure modification time changes
+          touch ai-sitemap.xml
 
-      - name: Configure Git & Attach to Branch
+      - name: Verify All Generated Files Exist
+        run: |
+          echo "🔍 VERIFYING OUTPUTS — Listing all generated files:"
+          echo "=================================================="
+          find schema-files -type f KATEX_INLINE_OPEN -name "*.json" -o -name "*.yaml" -o -name ".gitkeep" KATEX_INLINE_CLOSE | sort
+          echo ""
+          echo "📄 ai-sitemap.xml last modified:"
+          ls -la ai-sitemap.xml
+
+      - name: Configure Git
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git switch --detach ${{ github.ref_name }}
 
-      - name: Commit and Push Changes
+      - name: FORCE ADD AND COMMIT EVERYTHING
         run: |
-          # 👇 FORCE A CHANGE TO ENSURE GIT ALWAYS COMMITS
-          date +"%Y-%m-%d %H:%M:%S" > .github/workflow-last-run.txt
+          # Add everything including new files and directories
+          git add --all
 
-          git add .
+          # Show what's staged
+          echo "📦 STAGED CHANGES:"
           git status
 
-          if ! git diff --cached --quiet; then
-            git commit -m "🤖 Auto-generate files from XLSX and update sitemap"
-            git push origin ${{ github.ref_name }}
-            echo "✅ Push successful! All files committed."
-          else
-            echo "⏭️ No changes detected — nothing to commit or push."
-          fi
+          # ALWAYS commit, even if "no changes" — force it
+          git commit -m "🤖 Auto-generate files from XLSX and update sitemap" || echo "✅ Already up to date, forcing push anyway"
+
+          # Push
+          git push origin ${{ github.ref_name }}
+
+          echo "🚀 PUSH ATTEMPT COMPLETED"

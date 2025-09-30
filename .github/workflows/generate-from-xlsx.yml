@@ -106,6 +106,14 @@ jobs:
           git config --local user.name "GitHub Action"
           git switch --detach ${{ github.ref_name }}
 
+      - name: DEBUG — LIST ALL FILES ON DISK
+        run: |
+          echo "📁 FULL DIRECTORY LISTING:"
+          find . -type f -name "*.json" -o -name "*.yaml" -o -name "main-data*" | sort
+          echo ""
+          echo "📄 CONTENT OF main-data.json:"
+          cat schema-files/organization/main-data.json 2>/dev/null || echo "File not found on disk"
+    
       - name: FORCE ADD AND COMMIT EVERYTHING
         run: |
           # Add everything including new files and directories

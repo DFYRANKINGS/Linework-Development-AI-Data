@@ -86,47 +86,39 @@ jobs:
 
       - name: Generate or Update Sitemap (FORCE UPDATE)
         run: |
-          # Force update sitemap even if content didn't change
           python generate_sitemaps.py
-          # Touch it to ensure modification time changes
           touch ai-sitemap.xml
 
       - name: Verify All Generated Files Exist
         run: |
           echo "🔍 VERIFYING OUTPUTS — Listing all generated files:"
           echo "=================================================="
-          find schema-files -type f KATEX_INLINE_OPEN -name "*.json" -o -name "*.yaml" -o -name ".gitkeep" KATEX_INLINE_CLOSE | sort
+          find schema-files -type f KATEX_INLINE_OPEN -name "*.json" -o -name "*.yaml" -o -name "*.md" -o -name "*.llm" KATEX_INLINE_CLOSE | sort
           echo ""
           echo "📄 ai-sitemap.xml last modified:"
           ls -la ai-sitemap.xml
 
-      - name: Configure Git
+      - name: Configure Git Identity
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git switch --detach ${{ github.ref_name }}
 
-      - name: DEBUG — LIST ALL FILES ON DISK
+      - name: Setup Remote with Token (Extra Safety)
         run: |
-          echo "📁 FULL DIRECTORY LISTING:"
-          find . -type f -name "*.json" -o -name "*.yaml" -o -name "main-data*" | sort
-          echo ""
-          echo "📄 CONTENT OF main-data.json:"
-          cat schema-files/organization/main-data.json 2>/dev/null || echo "File not found on disk"
-    
+          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}.git
+
       - name: FORCE ADD AND COMMIT EVERYTHING
         run: |
-          # Add everything including new files and directories
           git add --all
-
-          # Show what's staged
           echo "📦 STAGED CHANGES:"
-          git status
-
-          # ALWAYS commit, even if "no changes" — force it
-          git commit -m "🤖 Auto-generate files from XLSX and update sitemap" || echo "✅ Already up to date, forcing push anyway"
-
-          # Push
+          git status --short
+          git commit -m "🤖 Auto-generate schema + sitemap [$(date +'%Y-%m-%d %H:%M:%S')]" || echo "✅ No changes, still pushing"
+          echo "🚀 PUSHING TO: ${{ github.ref_name }}"
           git push origin ${{ github.ref_name }}
 
-          echo "🚀 PUSH ATTEMPT COMPLETED"
+      - name: DEBUG - Verify Push Result
+        run: |
+          echo "🔎 Verifying latest commit on remote..."
+          git fetch origin ${{ github.ref_name }}
+          git log -1 origin/${{ github.ref_name }} --oneline
+          echo "✅ If commit above matches, SUCCESS! Files are live at Raw URLs."

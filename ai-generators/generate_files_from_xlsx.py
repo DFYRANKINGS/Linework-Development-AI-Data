@@ -1,229 +1,117 @@
-# ai-generators/generate_files_from_xlsx.py
-
-import argparse
 import os
 import json
 import yaml
-from pathlib import Path
 import pandas as pd
+import argparse
+from datetime import datetime
 
-# Mapping: Sheet Name → Output Directory + Filename Base
-SHEET_CONFIG = {
-    'core_info': {
-        'output_dir': 'schema-files/organization',
-        'filename_base': 'main-data',
-        'is_list': False,
-        'is_horizontal': True  # ← Handles your horizontal layout
-    },
-    'Services': {
-        'output_dir': 'schema-files/services',
-        'filename_base': 'services-list',
-        'is_list': True
-    },
-    'Products': {
-        'output_dir': 'schema-files/products',
-        'filename_base': 'products-list',
-        'is_list': True
-    },
-    'FAQs': {
-        'output_dir': 'schema-files/faqs',
-        'filename_base': 'faq',
-        'is_list': True
-    },
-    'Help Articles': {
-        'output_dir': 'schema-files/help-articles',
-        'filename_base': 'articles-list',
-        'is_list': True
-    },
-    'Reviews': {
-        'output_dir': 'schema-files/reviews',
-        'filename_base': 'reviews-list',
-        'is_list': True
-    },
-    'Locations': {
-        'output_dir': 'schema-files/locations',
-        'filename_base': 'locations-list',
-        'is_list': True
-    },
-    'Team': {
-        'output_dir': 'schema-files/team',
-        'filename_base': 'team-list',
-        'is_list': True
-    },
-    'Awards & Certifications': {
-        'output_dir': 'schema-files/awards',
-        'filename_base': 'awards-list',
-        'is_list': True
-    },
-    'Press/News Mentions': {
-        'output_dir': 'schema-files/press',
-        'filename_base': 'press-list',
-        'is_list': True
-    },
-    'Case Studies': {
-        'output_dir': 'schema-files/case-studies',
-        'filename_base': 'case-studies-list',
-        'is_list': True
-    }
+# ===== CONFIG =====
+DEFAULT_DATA_FILE = "templates/client-data.xlsx"
+OUTPUT_DIR = "schema-files"
+
+# Map Google Sheet tab names → output folder names
+SHEET_TO_FOLDER = {
+    "core_info": "organization",
+    "Services": "services",
+    "Products": "products",
+    "FAQs": "faqs",
+    "Help Articles": "help-articles",
+    "Reviews": "reviews",
+    "Locations": "locations",
+    "Team": "team",
+    "Awards & Certifications": "awards",
+    "PressNews Mentions": "press",
+    "Case Studies": "case-studies",
 }
+# ===================
 
-def clean_value(key, val):
-    """Clean and convert values appropriately"""
-    if pd.isna(val):
+def ensure_output_dir():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def sanitize_value(val):
+    """Convert any non-JSON-safe value into string or None"""
+    if pd.isna(val):  # Covers NaN, NaT, None
         return None
-    val = str(val).strip()
-    if val.lower() in ['not specified', 'n/a', '', 'none']:
-        return None
-
-    # Special handling for sameAs field — NOW USES <|>
-    if key == 'sameAs' and isinstance(val, str):
-        urls = [url.strip() for url in val.split('<|>') if url.strip()]
-        return urls if urls else None
-
-    # Try converting to number
-    if val.replace('.', '', 1).isdigit():
-        return float(val) if '.' in val else int(val)
-    # Try boolean
-    if val.lower() in ['true', 'yes']:
-        return True
-    elif val.lower() in ['false', 'no']:
-        return False
-    return val
-
-def parse_sheet_to_dict_or_list(df, is_list=False, is_horizontal=False):
-    """Convert sheet to dict or list of dicts"""
-    if is_list:
-        # Assume first row is header
-        if df.shape[0] == 0:
-            return []
-        headers = df.iloc[0].apply(lambda x: str(x).strip() if pd.notna(x) else "").tolist()
-        records = []
-        for idx in range(1, len(df)):
-            row = df.iloc[idx]
-            record = {}
-            for i, header in enumerate(headers):
-                if i < len(row):
-                    val = clean_value(header, row.iloc[i]) if pd.notna(row.iloc[i]) else None
-                    if val is not None:
-                        record[header] = val
-            if record:
-                records.append(record)
-        return records
-    else:
-        if is_horizontal and df.shape[0] >= 2:
-            # Horizontal: Row 1 = keys, Row 2 = values
-            headers = df.iloc[0].apply(lambda x: str(x).strip() if pd.notna(x) else "").tolist()
-            values = df.iloc[1].tolist()
-            data = {}
-            for i, key in enumerate(headers):
-                if i < len(values):
-                    val = clean_value(key, values[i])
-                    if val is not None:
-                        data[key] = val
-            return data
+    elif isinstance(val, (pd.Timestamp, datetime)):
+        return val.isoformat()
+    elif isinstance(val, pd.Timedelta):
+        return str(val)
+    elif hasattr(val, 'to_pydatetime'):  # Some pandas datetime types
+        return val.to_pydatetime().isoformat()
+    elif isinstance(val, (list, dict)):
+        # Recursively sanitize nested structures (unlikely in your data, but safe)
+        if isinstance(val, list):
+            return [sanitize_value(x) for x in val]
         else:
-            # Vertical fallback: Column A = key, Column B = value
-            data = {}
-            for _, row in df.iterrows():
-                if len(row) < 2:
-                    continue
-                key_cell = row.iloc[0]
-                if pd.isna(key_cell) or str(key_cell).strip() == '':
-                    continue
-                key = str(key_cell).strip()
-                value = clean_value(key, row.iloc[1]) if len(row) > 1 and pd.notna(row.iloc[1]) else None
-                data[key] = value
-            return data
+            return {k: sanitize_value(v) for k, v in val.items()}
+    else:
+        # Fallback: convert everything else to string if needed later
+        return val
 
-def write_json_yaml(data, output_path, filename_base):
-    """Write both .json and .yaml files"""
-    json_path = output_path / f"{filename_base}.json"
-    yaml_path = output_path / f"{filename_base}.yaml"
+def save_json(data, path):
+    if not data:
+        print(f"⚠️ No data to save for {path}")
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    
+    # Deep sanitize every value
+    clean_data = {k: sanitize_value(v) for k, v in data.items()}
 
-    output_path.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(clean_data, f, indent=2, ensure_ascii=False)
+    print(f"✅ SAVED: {path}")
 
-    try:
-        with open(json_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"💾 Wrote JSON: {json_path}")
-    except Exception as e:
-        print(f"❌ Failed to write JSON: {e}")
-        return False
+def save_yaml(data, path):
+    if not data:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    
+    # Sanitize for YAML too (though YAML is more forgiving)
+    clean_data = {k: sanitize_value(v) for k, v in data.items()}
 
-    try:
-        with open(yaml_path, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, allow_unicode=True, sort_keys=False)
-        print(f"💾 Wrote YAML: {yaml_path}")
-    except Exception as e:
-        print(f"❌ Failed to write YAML: {e}")
-        return False
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(clean_data, f, allow_unicode=True)
+    print(f"✅ SAVED: {path}")
 
-    return True
+def process_sheet_to_file(sheet_name, df_sheet):
+    """Process one sheet → save as main-data.json/.yaml in mapped folder"""
+    if df_sheet.empty:
+        print(f"⚠️ Sheet '{sheet_name}' is empty — skipping")
+        return
+
+    # Take first row only → convert to clean dict
+    row_dict = df_sheet.iloc[0].to_dict()
+
+    # Get target folder name
+    folder_name = SHEET_TO_FOLDER.get(sheet_name, sheet_name.lower().replace(" ", "-"))
+    target_dir = os.path.join(OUTPUT_DIR, folder_name)
+    base_path = os.path.join(target_dir, "main-data")
+
+    # Save both formats
+    save_json(row_dict, base_path + ".json")
+    save_yaml(row_dict, base_path + ".yaml")
+
+def generate_all_files(input_file):
+    ensure_output_dir()
+    print(f"📄 Processing: {input_file}")
+    
+    # Load all sheets from XLSX
+    xls = pd.read_excel(input_file, sheet_name=None)  # Returns dict: sheet_name → DataFrame
+    print(f"📄 Sheets found: {list(xls.keys())}")
+
+    for sheet_name, df_sheet in xls.items():
+        print(f"\n--- PROCESSING: {sheet_name} ---")
+        process_sheet_to_file(sheet_name, df_sheet)
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input', required=True, help='Path to input .xlsx file')
+    parser = argparse.ArgumentParser(description="Generate schema files from XLSX tabs")
+    parser.add_argument("--input", "-i", default=DEFAULT_DATA_FILE,
+                        help="Path to input .xlsx file")
     args = parser.parse_args()
 
-    print(f"📂 Working directory: {os.getcwd()}")
-    if not os.path.exists(args.input):
-        print(f"❌ FATAL: Input file NOT FOUND: {args.input}")
-        exit(1)
-
-    print(f"✅ Processing: {args.input}")
-
-    try:
-        xls = pd.ExcelFile(args.input)
-        print(f"📄 Found sheets: {xls.sheet_names}")
-    except Exception as e:
-        print(f"❌ Error loading Excel file: {e}")
-        exit(1)
-
-    site_url = None
-
-    for sheet_name, config in SHEET_CONFIG.items():
-        if sheet_name not in xls.sheet_names:
-            print(f"⚠️ Sheet '{sheet_name}' not found — skipping")
-            continue
-
-        print(f"\n--- Processing sheet: {sheet_name} ---")
-        df = pd.read_excel(xls, sheet_name=sheet_name, header=None)
-        print(f"📊 Shape: {df.shape}")
-
-        is_horizontal = config.get('is_horizontal', False)
-        data = parse_sheet_to_dict_or_list(df, config['is_list'], is_horizontal)
-
-        if config['is_list']:
-            print(f"📦 Parsed {len(data)} records")
-        else:
-            print(f"📦 Parsed {len(data)} fields")
-            if sheet_name == 'core_info':
-                site_url = data.get('website')
-
-        output_dir = Path(config['output_dir'])
-        success = write_json_yaml(data, output_dir, config['filename_base'])
-
-        if not success:
-            print(f"❌ Failed to write output for {sheet_name}")
-
-    if site_url:
-        config_dir = Path(".github/config")
-        config_dir.mkdir(parents=True, exist_ok=True)
-        with open(config_dir / "site_url.txt", "w") as f:
-            f.write(site_url.strip())
-        print(f"\n🌐 Site URL saved for sitemap: {site_url}")
-    else:
-        fallback_url = os.getenv('SITE_BASE_URL')
-        if fallback_url:
-            config_dir = Path(".github/config")
-            config_dir.mkdir(parents=True, exist_ok=True)
-            with open(config_dir / "site_url.txt", "w") as f:
-                f.write(fallback_url.strip())
-            print(f"\n🌐 Used fallback SITE_BASE_URL: {fallback_url}")
-        else:
-            print(f"\n⚠️ WARNING: No website found in core_info and no SITE_BASE_URL secret!")
-
-    print("\n🎉 All sheets processed successfully!")
+    print("⚙️ Starting processing...")
+    generate_all_files(args.input)
+    print("🎉 SUCCESS: All schema files generated!")
 
 if __name__ == "__main__":
     main()

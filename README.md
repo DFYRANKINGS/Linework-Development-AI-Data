@@ -1,6 +1,6 @@
-# Client AI Data Template
+# Linework Development AI Data
 
-A comprehensive template repository for creating AI-optimized client data systems with automated workflows, structured data generation, and multi-platform content distribution.
+A comprehensive repository for creating AI-optimized data systems with automated workflows, structured data generation, and multi-platform content distribution.
 
 ## 🚀 Quick Start
 
@@ -13,8 +13,8 @@ A comprehensive template repository for creating AI-optimized client data system
 
 ```
 ├── .github/workflows/          # GitHub Actions workflows
-│   ├── auto-refresh.yml       # Automated refresh workflow
-│   └── build_ai_files_and_ping_xlsx.yml  # Main processing workflow
+│   ├── auto-ping-sitemap.yml       # Automated search engine ping upon new files submitted or updated workflow
+│   └── generate-from-xlsx.yml  # Main processing workflow when client-data.xlsx is updated or submitted
 ├── docs/                      # Documentation
 │   ├── comprehensive_readme.md
 │   ├── configuration_templates.md
@@ -25,13 +25,12 @@ A comprehensive template repository for creating AI-optimized client data system
 │   └── troubleshooting_guide.md
 ├── templates/                 # Template files
 │   ├── client-data.xlsx      # Main client data template
-│   └── google_sheet_push_xlsx_to_github.js  # Google Sheets integration
 ├── ai-content/               # Generated AI content
 ├── schemas/                  # JSON-LD schemas
 ├── generate_files_xlsx.py    # Enhanced file generation script
 ├── generate_sitemaps.py      # Sitemap generation script
 ├── requirements.txt          # Python dependencies
-└── README.md                 # This file
+└── robots.txt                # Robot file directives to search engines
 ```
 
 ## 🔧 Configuration
@@ -40,20 +39,14 @@ A comprehensive template repository for creating AI-optimized client data system
 
 Set these in your repository settings under **Settings > Secrets and variables > Actions**:
 
-- `GITHUB_TOKEN` - Automatically provided by GitHub
-- `GOOGLE_SHEETS_API_KEY` - For Google Sheets integration (optional)
-- `SEARCH_CONSOLE_API_KEY` - For search engine notifications (optional)
+- `GH_TOKEN` - Automatically provided by GitHub
 
 ### Client Data Setup
 
 1. **Excel Method (Recommended)**:
    - Edit `templates/client-data.xlsx`
    - Use multiple sheets for different data types
-   - Push changes to trigger workflows
-
-2. **Google Sheets Method**:
-   - Follow the guide in `docs/google_sheets_setup_guide.md`
-   - Use the provided Google Apps Script
+   - Manual upload to templates folder with data or updates to trigger workflows
 
 ## 🤖 AI Features
 
@@ -74,15 +67,13 @@ Set these in your repository settings under **Settings > Secrets and variables >
 
 ## 🔄 Automated Workflows
 
-### Main Workflow (`build_ai_files_and_ping_xlsx.yml`)
+### Main Workflow (`generate-from-xlsx.yml`)
 - Triggers on Excel file changes
 - Generates all output formats
 - Creates sitemaps
-- Notifies search engines
 
-### Auto-refresh Workflow (`auto-refresh.yml`)
-- Scheduled updates
-- Keeps content fresh
+### Auto-ping Workflow (`auto-ping-sitemap.yml`)
+- Notifies search engines
 - Maintains search engine visibility
 
 ## 📚 Documentation

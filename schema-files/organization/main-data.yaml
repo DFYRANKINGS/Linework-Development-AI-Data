@@ -1,14 +1,15 @@
-client_name: LineWork Development
-website: https://www.lineworkdevelopment.com/
+address: '2275 Huntington Dr. #796, San Marino, CA 91108'
+business_hours: Business Hours Not Specified
 category: Design-Build Construction
-tagline: End-to-end home renovation with single point of contact
+client_name: LineWork Development
 description: Design-build company specializing in residential design, home remodeling,
   renovations, additions, ground-up construction, and ADU/JADU construction. Serves
   Southern California including Los Angeles and Orange Counties with comprehensive
   construction and design services.
-business_hours: Business Hours Not Specified
-year_founded: Not Specified
-number_of_employees: Not Specified
-address: '2275 Huntington Dr. #796, San Marino, CA 91108'
-phone: (626) 594-5005
 email: linework.dv@gmail.com
+number_of_employees: Not Specified
+phone: (626) 594-5005
+sameAs: https://www.instagram.com/linework_dv/?hl=en
+tagline: End-to-end home renovation with single point of contact.
+website: https://lineworkdevelopment.com/
+year_founded: 2015.0

@@ -1,39 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://lineworkdevelopment.com/schema-files/services/services-list.json</loc>
-    <lastmod>2025-09-29T16:14:26Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/awards/main-data.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
   </url>
   <url>
-    <loc>https://lineworkdevelopment.com/schema-files/services/services-list.yaml</loc>
-    <lastmod>2025-09-29T16:14:26Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/awards/main-data.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
   </url>
   <url>
-    <loc>https://lineworkdevelopment.com/schema-files/organization/licenses.json</loc>
-    <lastmod>2025-09-29T16:14:26Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/faqs/main-data.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
   </url>
   <url>
-    <loc>https://lineworkdevelopment.com/schema-files/organization/main-data.yaml</loc>
-    <lastmod>2025-09-29T16:14:26Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/faqs/main-data.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
   </url>
   <url>
-    <loc>https://lineworkdevelopment.com/schema-files/organization/licenses.yaml</loc>
-    <lastmod>2025-09-29T16:14:26Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/locations/main-data.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
   </url>
   <url>
-    <loc>https://lineworkdevelopment.com/schema-files/organization/main-data.json</loc>
-    <lastmod>2025-09-29T16:14:26Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/locations/main-data.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/organization/licenses.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/organization/licenses.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/organization/main-data.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/organization/main-data.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/services/main-data.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/services/main-data.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/services/services-list.json</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
+  </url>
+  <url>
+    <loc>https://raw.githubusercontent.com/DFYRANKINGS/Linework-Development-AI-Data/main/schema-files/services/services-list.yaml</loc>
+    <lastmod>2025-10-05T04:21:24+00:00</lastmod>
   </url>
 </urlset>
